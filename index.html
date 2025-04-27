@@ -1,0 +1,916 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:image" content="https://i.imgur.com/d3kyZLJ.jpeg"/>
+  <meta property="og:description" content="Tool Encode/Decode by Ng Quang Huy - Mã hóa và giải mã văn bản không giới hạn!"/>
+  <title>Tool Encode/Decode by Ng Quang Huy</title>
+  <link rel="icon" type="image/jpeg" href="https://i.imgur.com/d3kyZLJ.jpeg">
+  <link rel="apple-touch-icon" href="https://i.imgur.com/d3kyZLJ.jpeg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: url('https://i.imgur.com/auLIAYT.jpeg') no-repeat center center fixed;
+      background-size: cover;
+      min-height: 100vh;
+      color: #fff;
+      overflow-x: hidden;
+      position: relative;
+      transition: background-color 0.5s ease;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, rgba(0, 183, 235, 0.2), rgba(0, 255, 136, 0.2));
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+      z-index: -1;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .snowflake {
+      position: fixed;
+      top: -10px;
+      color: #fff;
+      font-size: calc(0.8em + 0.4 * Math.random());
+      opacity: 0.7;
+      pointer-events: none;
+      animation: fall calc(5s + 3s * Math.random()) linear infinite;
+      z-index: 10;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(-10vh); opacity: 0.7; }
+      80% { opacity: 0.7; }
+      100% { transform: translateY(100vh); opacity: 0; }
+    }
+
+    @-webkit-keyframes fall {
+      0% { -webkit-transform: translateY(-10vh); opacity: 0.7; }
+      80% { opacity: 0.7; }
+      100% { -webkit-transform: translateY(100vh); opacity: 0; }
+    }
+
+    @-moz-keyframes fall {
+      0% { -moz-transform: translateY(-10vh); opacity: 0.7; }
+      80% { opacity: 0.7; }
+      100% { -moz-transform: translateY(100vh); opacity: 0; }
+    }
+
+    .container {
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      margin: 60px auto;
+      padding: 40px;
+      width: 90%;
+      max-width: 700px;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      text-align: center;
+      transition: transform 0.3s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .container:hover {
+      transform: scale(1.02);
+    }
+
+    .logo {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+      margin-bottom: 20px;
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .logo:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 30px rgba(0, 183, 235, 0.7);
+    }
+
+    h2 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #00b7eb, #00ff88, #ff4500, #ffd700);
+      background-size: 400% 100%;
+      animation: rainbow 6s infinite linear;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 15px rgba(0, 183, 235, 0.7);
+      margin-bottom: 20px;
+      animation: pulse 2s infinite alternate;
+    }
+
+    @keyframes rainbow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 400% 50%; }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.05); }
+    }
+
+    textarea, select {
+      width: 100%;
+      padding: 14px;
+      margin: 12px 0;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-size: 1rem;
+      font-family: 'Roboto', sans-serif;
+      outline: none;
+      transition: all 0.3s ease;
+      resize: vertical;
+    }
+
+    textarea:focus, select:focus {
+      border-color: #00b7eb;
+      box-shadow: 0 0 12px rgba(0, 183, 235, 0.6);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    textarea::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 15px 0;
+    }
+
+    button {
+      background: linear-gradient(135deg, #00b7eb, #00ff88);
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: 'Roboto', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex: 1;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #00ff88, #00b7eb);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 183, 235, 0.6);
+    }
+
+    .copy-btn {
+      background: linear-gradient(135deg, #ff4500, #ffd700);
+    }
+
+    .copy-btn:hover {
+      background: linear-gradient(135deg, #ffd700, #ff4500);
+    }
+
+    .history {
+      margin-top: 30px;
+      text-align: left;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    .history table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #e0e0e0;
+      font-size: 0.9rem;
+    }
+
+    .history th, .history td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .history th {
+      background: rgba(0, 183, 235, 0.2);
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 500;
+      display: none;
+      animation: slideInRight 0.5s ease-in-out;
+      z-index: 1000;
+    }
+
+    .notification.success {
+      background: #4CAF50;
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.5);
+    }
+
+    .notification.error {
+      background: #e74c3c;
+      box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);
+    }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .progress-bar {
+      display: none;
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      width: 0;
+      height: 100%;
+      background: #00b7eb;
+      transition: width 1.5s ease-in-out;
+    }
+
+    .controls {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 1000;
+    }
+
+    .control-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      padding: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      position: relative;
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    .control-btn::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .control-btn:hover::after {
+      opacity: 1;
+    }
+
+    .social-links {
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #e0e0e0;
+    }
+
+    .social-links a {
+      color: #00b7eb;
+      text-decoration: none;
+      margin: 0 10px;
+      transition: color 0.3s ease;
+    }
+
+    .social-links a:hover {
+      color: #00ff88;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      padding: 15px 0;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #e0e0e0;
+      text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      z-index: 999;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .footer span {
+      color: #ff4500;
+      font-weight: 600;
+    }
+
+    body.dark-mode {
+      background: url('https://i.imgur.com/auLIAYT.jpeg') no-repeat center center fixed, #1a1a1a;
+      background-size: cover;
+    }
+
+    body.dark-mode .container {
+      background: rgba(30, 30, 30, 0.85);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    button:focus, textarea:focus, select:focus {
+      outline: 2px solid #00b7eb;
+      outline-offset: 2px;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        width: 95%;
+        padding: 25px;
+        margin: 40px auto;
+      }
+
+      .logo {
+        width: 100px;
+        height: 100px;
+      }
+
+      h2 {
+        font-size: 1.8rem;
+      }
+
+      textarea, select, button {
+        font-size: 0.95rem;
+      }
+
+      .notification {
+        top: 15px;
+        right: 15px;
+        padding: 12px 20px;
+        font-size: 0.9rem;
+      }
+
+      .footer {
+        font-size: 0.8rem;
+        padding: 10px 0;
+      }
+
+      .controls {
+        top: 15px;
+        left: 15px;
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+
+    @media (min-width: 601px) and (max-width: 900px) {
+      .container {
+        max-width: 600px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+
+  <div class="controls">
+    <div class="control-btn" onclick="toggleTheme()" data-tooltip="Chuyển đổi sáng/tối" aria-label="Chuyển đổi giao diện sáng/tối">
+      <i class="fas fa-moon"></i>
+    </div>
+    <div class="control-btn" onclick="toggleMusic()" data-tooltip="Bật/tắt nhạc nền" aria-label="Bật/tắt nhạc nền">
+      <i class="fas fa-music"></i>
+    </div>
+    <div class="control-btn" onclick="toggleSound()" data-tooltip="Bật/tắt âm thanh nút" aria-label="Bật/tắt âm thanh nút">
+      <i class="fas fa-volume-up"></i>
+    </div>
+    <div class="control-btn" onclick="toggleSnowflakes()" data-tooltip="Bật/tắt tuyết rơi" aria-label="Bật/tắt tuyết rơi">
+      <i class="fas fa-snowflake"></i>
+    </div>
+  </div>
+
+  <div class="container">
+    <img class="logo" src="https://i.imgur.com/d3kyZLJ.jpeg" alt="Tool Logo">
+    <h2>TOOL ENCODE/DECODE BY NG QUANG HUY</h2>
+    <select id="encode-type" aria-label="Chọn loại mã hóa">
+      <option value="base64">Base64</option>
+      <option value="url">URL Encode</option>
+      <option value="hex">Hexadecimal</option>
+    </select>
+    <textarea id="input-text" placeholder="Nhập văn bản để mã hóa/giải mã" rows="4" aria-label="Văn bản đầu vào"></textarea>
+    <div class="button-group">
+      <button onclick="encodeText()" aria-label="Mã hóa"><i class="fas fa-lock"></i> Mã hóa</button>
+      <button onclick="decodeText()" aria-label="Giải mã"><i class="fas fa-unlock"></i> Giải mã</button>
+      <button onclick="clearInput()" aria-label="Xóa"><i class="fas fa-times"></i> Xóa</button>
+    </div>
+    <div class="progress-bar" id="progress-bar">
+      <div class="progress-bar-fill" id="progress-bar-fill"></div>
+    </div>
+    <textarea id="output-text" placeholder="Kết quả" rows="4" readonly aria-label="Kết quả đầu ra"></textarea>
+    <button class="copy-btn" id="copy-btn" onclick="copyOutput()" style="display: none;" aria-label="Sao chép kết quả"><i class="fas fa-copy"></i> Sao chép</button>
+    <div class="history" id="history">
+      <table>
+        <thead>
+          <tr>
+            <th>Loại</th>
+            <th>Đầu vào</th>
+            <th>Đầu ra</th>
+            <th>Thời gian</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+    <div class="social-links">
+      Created by <a href="https://www.facebook.com/share/19FHXCtYYx/" target="_blank">Ng Quang Huy</a> | <a href="mailto:nqh300506@gmail.com">Liên hệ</a>
+    </div>
+  </div>
+
+  <div id="notification" class="notification"></div>
+
+  <audio id="bg-music" loop>
+    <source src="https://cdn.pixabay.com/audio/2023/03/29/14-44-22-360_2023-03-29-14-44-22-360.mp3" type="audio/mp3">
+  </audio>
+
+  <audio id="encode-sound">
+    <source src="https://www.freesound.org/data/previews/316/316847_5121236-lq.mp3" type="audio/mp3">
+  </audio>
+  <audio id="decode-sound">
+    <source src="https://www.freesound.org/data/previews/316/316848_5121236-lq.mp3" type="audio/mp3">
+  </audio>
+  <audio id="copy-sound">
+    <source src="https://www.freesound.org/data/previews/170/170621_1648170-lq.mp3" type="audio/mp3">
+  </audio>
+  <audio id="clear-sound">
+    <source src="https://www.freesound.org/data/previews/245/245645_1016140-lq.mp3" type="audio/mp3">
+  </audio>
+  <audio id="theme-sound">
+    <source src="https://www.freesound.org/data/previews/316/316848_5121236-lq.mp3" type="audio/mp3">
+  </audio>
+
+  <div class="footer">
+    2025 Copyright Tool Encode/Decode by <span>Ng Quang Huy</span>
+  </div>
+
+  <script>
+    let isMusicEnabled = true;
+    let isSoundEnabled = true;
+    let isSnowflakesEnabled = true;
+    let snowflakeInterval;
+
+    function showNotification(message, type) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type}`;
+      notification.style.display = 'block';
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 3000);
+    }
+
+    function playSound(soundId) {
+      if (!isSoundEnabled) return;
+      const sound = document.getElementById(soundId);
+      sound.volume = 0.5;
+      sound.currentTime = 0;
+      sound.play().catch(() => console.log('Sound playback blocked'));
+    }
+
+    function toggleMusic() {
+      playSound('theme-sound');
+      const music = document.getElementById('bg-music');
+      const icon = document.querySelector('.control-btn:nth-child(2) i');
+      isMusicEnabled = !isMusicEnabled;
+      if (isMusicEnabled) {
+        music.play().catch(() => console.log('Music playback blocked'));
+        icon.classList.replace('fa-music-slash', 'fa-music');
+        showNotification('Đã bật nhạc nền', 'success');
+      } else {
+        music.pause();
+        icon.classList.replace('fa-music', 'fa-music-slash');
+        showNotification('Đã tắt nhạc nền', 'success');
+      }
+    }
+
+    function toggleSound() {
+      isSoundEnabled = !isSoundEnabled;
+      const icon = document.querySelector('.control-btn:nth-child(3) i');
+      if (isSoundEnabled) {
+        icon.classList.replace('fa-volume-mute', 'fa-volume-up');
+        showNotification('Đã bật âm thanh nút', 'success');
+      } else {
+        icon.classList.replace('fa-volume-up', 'fa-volume-mute');
+        showNotification('Đã tắt âm thanh nút', 'success');
+      }
+    }
+
+    function toggleSnowflakes() {
+      playSound('theme-sound');
+      isSnowflakesEnabled = !isSnowflakesEnabled;
+      const icon = document.querySelector('.control-btn:nth-child(4) i');
+      if (isSnowflakesEnabled) {
+        startSnowflakes();
+        icon.classList.replace('fa-snowflake-o', 'fa-snowflake');
+        showNotification('Đã bật tuyết rơi', 'success');
+      } else {
+        clearInterval(snowflakeInterval);
+        document.querySelectorAll('.snowflake').forEach(s => s.remove());
+        icon.classList.replace('fa-snowflake', 'fa-snowflake-o');
+        showNotification('Đã tắt tuyết rơi', 'success');
+      }
+    }
+
+    // Custom Base64 encoder/decoder for unlimited characters
+    function customBase64Encode(input) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+      let output = '';
+      let i = 0;
+      const bytes = new TextEncoder().encode(input); // UTF-8 encoding
+      while (i < bytes.length) {
+        const b1 = bytes[i++];
+        const b2 = i < bytes.length ? bytes[i++] : null;
+        const b3 = i < bytes.length ? bytes[i++] : null;
+        const enc1 = b1 >> 2;
+        const enc2 = ((b1 & 3) << 4) | (b2 >> 4);
+        const enc3 = b2 !== null ? ((b2 & 15) << 2) | (b3 >> 6) : 64;
+        const enc4 = b3 !== null ? (b3 & 63) : 64;
+        output += chars[enc1] + chars[enc2] + (enc3 < 64 ? chars[enc3] : '=') + (enc4 < 64 ? chars[enc4] : '=');
+      }
+      return output;
+    }
+
+    function customBase64Decode(input) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+      let bytes = [];
+      input = input.replace(/=+$/, ''); // Remove padding
+      for (let i = 0; i < input.length; i += 4) {
+        const enc1 = chars.indexOf(input[i]);
+        const enc2 = chars.indexOf(input[i + 1]);
+        const enc3 = chars.indexOf(input[i + 2] || '=');
+        const enc4 = chars.indexOf(input[i + 3] || '=');
+        if (enc1 < 0 || enc2 < 0 || (input[i + 2] && enc3 < 0) || (input[i + 3] && enc4 < 0)) {
+          throw new Error('Chuỗi Base64 không hợp lệ');
+        }
+        bytes.push((enc1 << 2) | (enc2 >> 4));
+        if (enc3 < 64) bytes.push(((enc2 & 15) << 4) | (enc3 >> 2));
+        if (enc4 < 64) bytes.push(((enc3 & 3) << 6) | enc4);
+      }
+      return new TextDecoder().decode(new Uint8Array(bytes));
+    }
+
+    // Chunk-based URL encoding/decoding
+    function chunkUrlEncode(input) {
+      const chunkSize = 10000;
+      let output = '';
+      for (let i = 0; i < input.length; i += chunkSize) {
+        output += encodeURIComponent(input.slice(i, i + chunkSize));
+      }
+      return output;
+    }
+
+    function chunkUrlDecode(input) {
+      const chunkSize = 10000;
+      let output = '';
+      for (let i = 0; i < input.length; i += chunkSize) {
+        output += decodeURIComponent(input.slice(i, i + chunkSize));
+      }
+      return output;
+    }
+
+    function encodeText() {
+      playSound('encode-sound');
+      const input = document.getElementById('input-text').value;
+      const type = document.getElementById('encode-type').value;
+      const output = document.getElementById('output-text');
+      const progressBar = document.getElementById('progress-bar');
+      const progressBarFill = document.getElementById('progress-bar-fill');
+      const copyBtn = document.getElementById('copy-btn');
+
+      if (!input) {
+        output.value = '';
+        showNotification('Vui lòng nhập văn bản!', 'error');
+        copyBtn.style.display = 'none';
+        return;
+      }
+
+      progressBar.style.display = 'block';
+      progressBarFill.style.width = '0';
+      output.value = 'Đang mã hóa...';
+      copyBtn.style.display = 'none';
+
+      setTimeout(() => {
+        progressBarFill.style.width = '100%';
+        setTimeout(() => {
+          progressBar.style.display = 'none';
+          let result;
+          try {
+            if (type === 'base64') {
+              result = customBase64Encode(input);
+            } else if (type === 'url') {
+              result = chunkUrlEncode(input);
+            } else if (type === 'hex') {
+              const bytes = new TextEncoder().encode(input);
+              result = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+            output.value = result;
+            copyBtn.style.display = 'block';
+            showNotification('Mã hóa thành công!', 'success');
+            addToHistory('Encode', type, input, result);
+          } catch (e) {
+            output.value = '';
+            showNotification('Lỗi khi mã hóa: ' + e.message, 'error');
+          }
+        }, 1500);
+      }, 50);
+    }
+
+    function decodeText() {
+      playSound('decode-sound');
+      const input = document.getElementById('input-text').value;
+      const type = document.getElementById('encode-type').value;
+      const output = document.getElementById('output-text');
+      const progressBar = document.getElementById('progress-bar');
+      const progressBarFill = document.getElementById('progress-bar-fill');
+      const copyBtn = document.getElementById('copy-btn');
+
+      if (!input) {
+        output.value = '';
+        showNotification('Vui lòng nhập văn bản!', 'error');
+        copyBtn.style.display = 'none';
+        return;
+      }
+
+      progressBar.style.display = 'block';
+      progressBarFill.style.width = '0';
+      output.value = 'Đang giải mã...';
+      copyBtn.style.display = 'none';
+
+      setTimeout(() => {
+        progressBarFill.style.width = '100%';
+        setTimeout(() => {
+          progressBar.style.display = 'none';
+          let result;
+          try {
+            if (type === 'base64') {
+              if (!/^[A-Za-z0-9+/=]+$/.test(input)) throw new Error('Chuỗi Base64 không hợp lệ');
+              result = customBase64Decode(input);
+            } else if (type === 'url') {
+              result = chunkUrlDecode(input);
+            } else if (type === 'hex') {
+              if (!/^[0-9a-fA-F]+$/.test(input) || input.length % 2 !== 0) throw new Error('Chuỗi Hex không hợp lệ');
+              const bytes = new Uint8Array(input.length / 2);
+              for (let i = 0; i < input.length; i += 2) {
+                bytes[i / 2] = parseInt(input.substr(i, 2), 16);
+              }
+              result = new TextDecoder().decode(bytes);
+            }
+            output.value = result;
+            copyBtn.style.display = 'block';
+            showNotification('Giải mã thành công!', 'success');
+            addToHistory('Decode', type, input, result);
+          } catch (e) {
+            output.value = '';
+            showNotification('Lỗi khi giải mã: ' + e.message, 'error');
+          }
+        }, 1500);
+      }, 50);
+    }
+
+    function copyOutput() {
+      playSound('copy-sound');
+      const output = document.getElementById('output-text').value;
+      if (!output) return;
+
+      // Primary clipboard API
+      try {
+        navigator.clipboard.writeText(output).then(() => {
+          showNotification('Đã sao chép kết quả!', 'success');
+        }).catch(err => {
+          console.error('Clipboard API failed:', err);
+          fallbackCopy(output);
+        });
+      } catch (err) {
+        console.error('Clipboard API not available:', err);
+        fallbackCopy(output);
+      }
+    }
+
+    function fallbackCopy(text) {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showNotification('Đã sao chép kết quả (fallback)!', 'success');
+      } catch (err) {
+        showNotification('Sao chép thất bại: ' + err.message, 'error');
+        console.error('Fallback copy failed:', err);
+      }
+    }
+
+    function clearInput() {
+      playSound('clear-sound');
+      document.getElementById('input-text').value = '';
+      document.getElementById('output-text').value = '';
+      document.getElementById('copy-btn').style.display = 'none';
+      showNotification('Đã xóa!', 'success');
+    }
+
+    function addToHistory(action, type, input, output) {
+      const historyBody = document.getElementById('history-body');
+      const timestamp = new Date().toLocaleString('vi-VN');
+      const history = JSON.parse(localStorage.getItem('encodeHistory') || '[]');
+      history.unshift({ action, type, input: input.slice(0, 20), output: output.slice(0, 20), timestamp });
+      if (history.length > 10) history.pop();
+      localStorage.setItem('encodeHistory', JSON.stringify(history));
+
+      historyBody.innerHTML = '';
+      history.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.action} (${item.type})</td>
+          <td>${item.input}...</td>
+          <td>${item.output}...</td>
+          <td>${item.timestamp}</td>
+        `;
+        historyBody.appendChild(row);
+      });
+    }
+
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem('encodeHistory') || '[]');
+      const historyBody = document.getElementById('history-body');
+      historyBody.innerHTML = '';
+      history.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.action} (${item.type})</td>
+          <td>${item.input}...</td>
+          <td>${item.output}...</td>
+          <td>${item.timestamp}</td>
+        `;
+        historyBody.appendChild(row);
+      });
+    }
+
+    function toggleTheme() {
+      playSound('theme-sound');
+      document.body.classList.toggle('dark-mode');
+      const icon = document.querySelector('.controls .control-btn:nth-child(1) i');
+      icon.classList.toggle('fa-moon');
+      icon.classList.toggle('fa-sun');
+      localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    }
+
+    function createSnowflake() {
+      try {
+        if (!isSnowflakesEnabled) return;
+        const snowflakes = document.querySelectorAll('.snowflake');
+        if (snowflakes.length > 50) return;
+        const snowflake = document.createElement('div');
+        snowflake.className = 'snowflake';
+        snowflake.innerHTML = '❄️';
+        snowflake.style.left = Math.random() * window.innerWidth + 'px';
+        snowflake.style.animationDuration = Math.random() * 3 + 5 + 's';
+        snowflake.style.opacity = Math.random() * 0.4 + 0.5;
+        document.body.appendChild(snowflake);
+        console.log('Snowflake created:', snowflake);
+        setTimeout(() => {
+          snowflake.remove();
+          console.log('Snowflake removed');
+        }, 10000);
+      } catch (e) {
+        console.error('Error creating snowflake:', e);
+      }
+    }
+
+    function startSnowflakes() {
+      try {
+        if (!isSnowflakesEnabled) return;
+        snowflakeInterval = setInterval(createSnowflake, 800);
+        console.log('Snowflake interval started:', snowflakeInterval);
+      } catch (e) {
+        console.error('Error starting snowflakes:', e);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      startSnowflakes();
+      console.log('DOM loaded, snowflakes started');
+    });
+
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark-mode');
+      document.querySelector('.controls .control-btn:nth-child(1) i').classList.replace('fa-moon', 'fa-sun');
+    }
+
+    loadHistory();
+
+    document.getElementById('bg-music').volume = 0.3;
+    document.getElementById('bg-music').play().catch(() => {
+      console.log('Autoplay blocked; user interaction required');
+    });
+
+    const container = document.querySelector('.container');
+    container.addEventListener('mousemove', (e) => {
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+      const tiltX = (y / rect.height) * 10;
+      const tiltY = -(x / rect.width) * 10;
+      container.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.02)`;
+    });
+
+    container.addEventListener('mouseleave', () => {
+      container.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
+    });
+
+    console.log('Script loaded successfully');
+  </script>
+</body>
+</html>
